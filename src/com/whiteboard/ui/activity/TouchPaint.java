@@ -24,6 +24,8 @@ import com.digitalxyncing.communication.MessageHandler;
 import com.digitalxyncing.communication.MessageHandlerFactory;
 import com.digitalxyncing.communication.impl.ZmqClientEndpoint;
 import com.digitalxyncing.document.Message.MessageType;
+import com.whiteboard.model.StringDocument;
+import com.whiteboard.ui.view.PaintView;
 
 import java.io.IOException;
 

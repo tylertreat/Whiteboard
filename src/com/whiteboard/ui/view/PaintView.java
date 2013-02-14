@@ -1,4 +1,4 @@
-package com.whiteboard.ui.activity;
+package com.whiteboard.ui.view;
 
 import android.content.Context;
 import android.graphics.*;

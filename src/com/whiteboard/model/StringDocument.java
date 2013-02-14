@@ -1,4 +1,4 @@
-package com.whiteboard.ui.activity;
+package com.whiteboard.model;
 
 import com.digitalxyncing.document.impl.Document;
 import com.digitalxyncing.document.impl.DocumentFragment;
