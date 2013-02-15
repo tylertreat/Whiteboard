@@ -5,18 +5,17 @@ import android.graphics.*;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**
- * This view implements the drawing canvas.
- *
- * It handles all of the input events and drawing functions.
+ * {@code WhiteboardView} extends {@link View} by using a {@link Canvas} for drawing.
+ * It handles all of the touch and motion events.
  */
-public class PaintView extends View {
+public class WhiteboardView extends View {
 
-    /** Background color. */
-    static final int BACKGROUND_COLOR = Color.WHITE;
-    static final int BRUSH_COLOR = Color.BLACK;
-
-    private static final int FADE_ALPHA = 0x06;
+    private static final int BACKGROUND_COLOR = Color.WHITE;
+    private static final int BRUSH_COLOR = Color.BLACK;
     private static final int TRACKBALL_SCALE = 10;
 
     private Bitmap mBitmap;
@@ -24,20 +23,25 @@ public class PaintView extends View {
     private final Paint mPaint;
     private float mCurX;
     private float mCurY;
+    private Queue<DrawingPoint> mLastDrawn;
 
-    enum PaintMode {
+    private enum PaintMode {
         Draw,
         Erase,
     }
 
-    public PaintView(Context c) {
-        super(c);
+    public WhiteboardView(Context context) {
+        super(context);
         setFocusable(true);
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
+        mLastDrawn = new LinkedList<DrawingPoint>();
         setBackgroundColor(BACKGROUND_COLOR);
     }
 
+    /**
+     * Clear the whiteboard canvas.
+     */
     public void clear() {
         if (mCanvas != null) {
             mPaint.setColor(BACKGROUND_COLOR);
@@ -101,6 +105,10 @@ public class PaintView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (event.getActionMasked() == MotionEvent.ACTION_UP) {
+            // TODO Fire document update message
+            mLastDrawn.clear();
+        }
         return onTouchOrHoverEvent(event, true);
     }
 
@@ -195,11 +203,12 @@ public class PaintView extends View {
 
     /**
      * Draw an oval.
-     *
+     * <p/>
      * When the orienation is 0 radians, orients the major axis vertically,
      * angles less than or greater than 0 radians rotate the major axis left or right.
      */
     private final RectF mReusableOvalRect = new RectF();
+
     private void drawOval(Canvas canvas, float x, float y, float major, float minor,
                           float orientation, Paint paint) {
         canvas.save(Canvas.MATRIX_SAVE_FLAG);
@@ -210,6 +219,21 @@ public class PaintView extends View {
         mReusableOvalRect.bottom = y + major / 2;
         canvas.drawOval(mReusableOvalRect, paint);
         canvas.restore();
+        mLastDrawn.add(new DrawingPoint(mReusableOvalRect));
+    }
+
+    private class DrawingPoint {
+
+        private RectF mRectF;
+        // TODO We need to store the Paint information too, but Paint is not serializable
+
+        public DrawingPoint(RectF rectF) {
+            mRectF = new RectF(rectF);
+        }
+
+        public RectF getRectF() {
+            return mRectF;
+        }
     }
 
 }

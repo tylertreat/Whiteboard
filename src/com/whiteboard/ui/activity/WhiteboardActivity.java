@@ -22,11 +22,11 @@ import com.clarionmedia.infinitum.activity.InfinitumActivity;
 import com.clarionmedia.infinitum.di.annotation.Autowired;
 import com.whiteboard.model.WhiteboardDocument;
 import com.whiteboard.service.WhiteboardService;
-import com.whiteboard.ui.view.PaintView;
+import com.whiteboard.ui.view.WhiteboardView;
 
 public class WhiteboardActivity extends InfinitumActivity {
 
-    private PaintView mView;
+    private WhiteboardView mView;
 
     @Autowired
     private WhiteboardService mWhiteboardService;
@@ -34,7 +34,7 @@ public class WhiteboardActivity extends InfinitumActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mView = new PaintView(this);
+        mView = new WhiteboardView(this);
         setContentView(mView);
         mView.requestFocus();
         new InviteUserTask().execute();
