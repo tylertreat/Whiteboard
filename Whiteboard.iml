@@ -49,6 +49,8 @@
     </orderEntry>
     <orderEntry type="library" name="aws-android-sdk-1.4.4-ses" level="project" />
     <orderEntry type="library" name="DigitalXyncing" level="project" />
+    <orderEntry type="library" name="dexmaker-1.0" level="project" />
+    <orderEntry type="library" name="aws-android-sdk-1.4.4-core" level="project" />
   </component>
 </module>
 
