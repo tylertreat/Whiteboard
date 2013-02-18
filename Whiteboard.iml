@@ -51,6 +51,9 @@
     <orderEntry type="library" name="DigitalXyncing" level="project" />
     <orderEntry type="library" name="dexmaker-1.0" level="project" />
     <orderEntry type="library" name="aws-android-sdk-1.4.4-core" level="project" />
+    <orderEntry type="library" name="infinitum-orm-1.0" level="project" />
+    <orderEntry type="library" name="infinitum-web-1.0" level="project" />
+    <orderEntry type="library" name="gson-2.2.2" level="project" />
   </component>
 </module>
 

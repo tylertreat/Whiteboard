@@ -16,11 +16,9 @@
 
 package com.whiteboard.ui.activity;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import com.clarionmedia.infinitum.activity.InfinitumActivity;
 import com.clarionmedia.infinitum.di.annotation.Autowired;
-import com.whiteboard.model.WhiteboardDocument;
 import com.whiteboard.service.WhiteboardService;
 import com.whiteboard.ui.view.WhiteboardView;
 
@@ -37,18 +35,6 @@ public class WhiteboardActivity extends InfinitumActivity {
         mView = new WhiteboardView(this);
         setContentView(mView);
         mView.requestFocus();
-        new InviteUserTask().execute();
-    }
-
-    private class InviteUserTask extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            WhiteboardDocument whiteboard = mWhiteboardService.createWhiteboard();
-            mWhiteboardService.inviteToWhiteboard(whiteboard, "Tyler", "ttreat31@gmail.com");
-            return null;
-        }
-
     }
 
 }
