@@ -17,14 +17,22 @@
 package com.whiteboard.ui.activity;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import com.clarionmedia.infinitum.activity.InfinitumActivity;
+import com.clarionmedia.infinitum.activity.annotation.InjectLayout;
+import com.clarionmedia.infinitum.activity.annotation.InjectView;
 import com.clarionmedia.infinitum.di.annotation.Autowired;
+import com.whiteboard.R;
 import com.whiteboard.service.WhiteboardService;
 import com.whiteboard.ui.view.WhiteboardView;
 
+@InjectLayout(R.layout.activity_whiteboard)
 public class WhiteboardActivity extends InfinitumActivity {
 
-    private WhiteboardView mView;
+    @InjectView(R.id.whiteboard_view)
+    private WhiteboardView mWhiteboard;
 
     @Autowired
     private WhiteboardService mWhiteboardService;
@@ -32,9 +40,25 @@ public class WhiteboardActivity extends InfinitumActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mView = new WhiteboardView(this);
-        setContentView(mView);
-        mView.requestFocus();
+        mWhiteboard.requestFocus();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.whiteboard_activity, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_full_screen:
+                getActionBar().hide();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
 }

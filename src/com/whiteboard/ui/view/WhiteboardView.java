@@ -2,6 +2,7 @@ package com.whiteboard.ui.view;
 
 import android.content.Context;
 import android.graphics.*;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -30,8 +31,8 @@ public class WhiteboardView extends View {
         Erase,
     }
 
-    public WhiteboardView(Context context) {
-        super(context);
+    public WhiteboardView(Context context, AttributeSet attr) {
+        super(context, attr);
         setFocusable(true);
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
