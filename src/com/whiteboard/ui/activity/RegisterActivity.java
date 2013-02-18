@@ -10,7 +10,6 @@ import com.clarionmedia.infinitum.activity.InfinitumActivity;
 import com.clarionmedia.infinitum.activity.annotation.Bind;
 import com.clarionmedia.infinitum.activity.annotation.InjectLayout;
 import com.clarionmedia.infinitum.activity.annotation.InjectView;
-import com.clarionmedia.infinitum.di.annotation.Autowired;
 import com.clarionmedia.infinitum.orm.Session;
 import com.clarionmedia.infinitum.orm.context.InfinitumOrmContext;
 import com.clarionmedia.infinitum.orm.context.InfinitumOrmContext.SessionType;
@@ -21,9 +20,6 @@ import com.whiteboard.model.User;
 
 @InjectLayout(R.layout.activity_register)
 public class RegisterActivity extends InfinitumActivity {
-
-    @Autowired
-    private SessionManager mSessionManager;
 
     @InjectView(R.id.email_field)
     private EditText mEmailField;
@@ -79,7 +75,7 @@ public class RegisterActivity extends InfinitumActivity {
             user.setName(name);
         user.setPassword(password);
         session.save(user);
-        mSessionManager.setUser(user);
+        SessionManager.setUser(user);
         session.close();
         setResult(RESULT_OK);
         finish();

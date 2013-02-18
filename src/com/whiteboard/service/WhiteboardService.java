@@ -6,6 +6,6 @@ public interface WhiteboardService {
 
     WhiteboardDocument createWhiteboard();
 
-    void inviteToWhiteboard(WhiteboardDocument whiteboard, String name, String email);
+    void inviteToWhiteboard(WhiteboardDocument whiteboard, String email);
 
 }

@@ -5,7 +5,10 @@ import android.graphics.*;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import com.whiteboard.auth.SessionManager;
+import com.whiteboard.model.WhiteboardDocument;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -20,7 +23,7 @@ public class WhiteboardView extends View {
     private static final int TRACKBALL_SCALE = 10;
 
     private Bitmap mBitmap;
-    private Canvas mCanvas;
+    private WhiteboardDocument mWhiteboard;
     private final Paint mPaint;
     private float mCurX;
     private float mCurY;
@@ -44,11 +47,15 @@ public class WhiteboardView extends View {
      * Clear the whiteboard canvas.
      */
     public void clear() {
-        if (mCanvas != null) {
+        if (mWhiteboard != null) {
             mPaint.setColor(BACKGROUND_COLOR);
-            mCanvas.drawPaint(mPaint);
+            mWhiteboard.getFullState().drawPaint(mPaint);
             invalidate();
         }
+    }
+
+    public WhiteboardDocument getDocument() {
+        return mWhiteboard;
     }
 
     @Override
@@ -69,7 +76,12 @@ public class WhiteboardView extends View {
             newCanvas.drawBitmap(mBitmap, 0, 0, null);
         }
         mBitmap = newBitmap;
-        mCanvas = newCanvas;
+        try {
+            mWhiteboard = new WhiteboardDocument(newCanvas, SessionManager.getUser().getDisplayName());
+        } catch (IOException e) {
+            // TODO
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -189,13 +201,13 @@ public class WhiteboardView extends View {
                 case Draw:
                     mPaint.setColor(BRUSH_COLOR);
                     mPaint.setAlpha(Math.min((int) (pressure * 128), 255));
-                    drawOval(mCanvas, x, y, major, minor, orientation, mPaint);
+                    drawOval(mWhiteboard.getFullState(), x, y, major, minor, orientation, mPaint);
                     break;
 
                 case Erase:
                     mPaint.setColor(BACKGROUND_COLOR);
                     mPaint.setAlpha(Math.min((int) (pressure * 128), 255));
-                    drawOval(mCanvas, x, y, major, minor, orientation, mPaint);
+                    drawOval(mWhiteboard.getFullState(), x, y, major, minor, orientation, mPaint);
                     break;
             }
         }

@@ -11,7 +11,6 @@ import com.clarionmedia.infinitum.activity.InfinitumActivity;
 import com.clarionmedia.infinitum.activity.annotation.Bind;
 import com.clarionmedia.infinitum.activity.annotation.InjectLayout;
 import com.clarionmedia.infinitum.activity.annotation.InjectView;
-import com.clarionmedia.infinitum.di.annotation.Autowired;
 import com.clarionmedia.infinitum.orm.Session;
 import com.clarionmedia.infinitum.orm.context.InfinitumOrmContext;
 import com.clarionmedia.infinitum.orm.context.InfinitumOrmContext.SessionType;
@@ -19,14 +18,12 @@ import com.clarionmedia.infinitum.orm.criteria.criterion.Conditions;
 import com.whiteboard.R;
 import com.whiteboard.auth.SessionManager;
 import com.whiteboard.model.User;
+import com.whiteboard.util.NetworkUtils;
 
 @InjectLayout(R.layout.activity_login)
 public class LoginActivity extends InfinitumActivity {
 
     private static final int REQUEST_REGISTER = 1;
-
-    @Autowired
-    private SessionManager mSessionManager;
 
     @InjectView(R.id.email_field)
     private EditText mEmailField;
@@ -44,6 +41,7 @@ public class LoginActivity extends InfinitumActivity {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        NetworkUtils.getLocalIpAddress();
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -70,7 +68,7 @@ public class LoginActivity extends InfinitumActivity {
             Toast.makeText(this, "Invalid username or password", Toast.LENGTH_LONG).show();
             return;
         }
-        mSessionManager.setUser(user);
+        SessionManager.setUser(user);
         Intent intent = new Intent(this, WhiteboardActivity.class);
         startActivity(intent);
         finish();

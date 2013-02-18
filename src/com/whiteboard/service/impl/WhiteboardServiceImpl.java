@@ -27,8 +27,10 @@ public class WhiteboardServiceImpl implements WhiteboardService {
     }
 
     @Override
-    public void inviteToWhiteboard(WhiteboardDocument whiteboard, String name, String email) {
-        mNotificationService.emailWhiteboardInvite(whiteboard, name, email);
+    public void inviteToWhiteboard(WhiteboardDocument whiteboard, String email) {
+        if (!whiteboard.isShareEnabled())
+            throw new IllegalArgumentException("Sharing is disabled for this whiteboard");
+        mNotificationService.emailWhiteboardInvite(whiteboard, email);
     }
 
 }

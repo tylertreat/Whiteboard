@@ -1,18 +1,16 @@
 package com.whiteboard.auth;
 
-import com.clarionmedia.infinitum.di.annotation.Bean;
 import com.whiteboard.model.User;
 
-@Bean
 public class SessionManager {
 
-    private User sSessionUser;
+    private static User sSessionUser;
 
-    public User getUser() {
+    public static User getUser() {
         return sSessionUser;
     }
 
-    public void setUser(User user) {
+    public static void setUser(User user) {
         sSessionUser = user;
     }
 

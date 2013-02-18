@@ -39,4 +39,10 @@ public class User {
         mPassword = password;
     }
 
+    public String getDisplayName() {
+        if (mName != null)
+            return mName;
+        return mEmail;
+    }
+
 }

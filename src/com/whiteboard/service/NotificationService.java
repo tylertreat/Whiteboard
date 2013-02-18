@@ -4,6 +4,6 @@ import com.whiteboard.model.WhiteboardDocument;
 
 public interface NotificationService {
 
-    void emailWhiteboardInvite(WhiteboardDocument whiteboard, String name, String email);
+    void emailWhiteboardInvite(WhiteboardDocument whiteboard, String email);
 
 }

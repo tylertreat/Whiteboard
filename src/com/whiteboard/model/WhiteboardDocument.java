@@ -10,6 +10,8 @@ public class WhiteboardDocument extends Document<Canvas> {
 
     private Canvas mCanvas;
     private String mOwner;
+    private boolean mIsShareEnabled;
+    private String mConnection;
 
     public WhiteboardDocument(Canvas canvas, String owner) throws IOException {
         super(canvas);
@@ -39,5 +41,21 @@ public class WhiteboardDocument extends Document<Canvas> {
 
     public String getOwner() {
         return mOwner;
+    }
+
+    public boolean isShareEnabled() {
+        return mIsShareEnabled;
+    }
+
+    public void setShareEnabled(boolean isShareEnabled) {
+        mIsShareEnabled = isShareEnabled;
+    }
+
+    public String getConnection() {
+        return mConnection;
+    }
+
+    public void setConnection(String connection) {
+        mConnection = connection;
     }
 }
