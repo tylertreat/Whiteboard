@@ -29,9 +29,13 @@ import com.clarionmedia.infinitum.activity.InfinitumActivity;
 import com.clarionmedia.infinitum.activity.annotation.InjectLayout;
 import com.clarionmedia.infinitum.activity.annotation.InjectView;
 import com.clarionmedia.infinitum.di.annotation.Autowired;
-import com.digitalxyncing.communication.HostEndpoint;
+import com.clarionmedia.infinitum.logging.Logger;
+import com.digitalxyncing.communication.Endpoint;
+import com.digitalxyncing.communication.impl.ZmqClientEndpoint;
 import com.digitalxyncing.communication.impl.ZmqHostEndpoint;
 import com.whiteboard.R;
+import com.whiteboard.handler.ClientMessageHandlerFactory;
+import com.whiteboard.handler.HostMessageHandlerFactory;
 import com.whiteboard.model.WhiteboardDocument;
 import com.whiteboard.service.WhiteboardService;
 import com.whiteboard.ui.view.WhiteboardView;
@@ -48,16 +52,26 @@ public class WhiteboardActivity extends InfinitumActivity {
     @Autowired
     private WhiteboardService mWhiteboardService;
 
-    private HostEndpoint<Canvas> mHostEndpoint;
+    private Endpoint<Canvas> mEndpoint;
+    private Logger mLogger;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Uri uri = getIntent().getData();
-        if (uri != null) {
-            // TODO connect to host
+        mLogger = Logger.getInstance(getClass().getSimpleName());
+        try {
+            setEndpoint(getIntent().getData());
+        } catch (IOException e) {
+            mLogger.error("Error while configuring endpoint", e);
         }
         mWhiteboard.requestFocus();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mEndpoint.closeInboundChannel();
+        mEndpoint.closeOutboundChannel();
     }
 
     @Override
@@ -79,6 +93,22 @@ public class WhiteboardActivity extends InfinitumActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void setEndpoint(Uri whiteboardUri) throws IOException {
+        String connection;
+        if (whiteboardUri != null) {
+            connection = whiteboardUri.getQueryParameter("host");
+            String[] hostAndPort = connection.split(":");
+            mEndpoint = new ZmqClientEndpoint<Canvas>(hostAndPort[0], Integer.valueOf(hostAndPort[1]),
+                    NetworkUtils.getAvailablePort(), new ClientMessageHandlerFactory());
+        } else {
+            String ip = NetworkUtils.getLocalIpAddress();
+            int port = NetworkUtils.getAvailablePort();
+            connection = ip + ':' + port;
+            mEndpoint = new ZmqHostEndpoint<Canvas>(port, new HostMessageHandlerFactory());
+        }
+        mWhiteboard.getDocument().setConnection(connection);
     }
 
     private void showShareDialog() {
@@ -104,7 +134,7 @@ public class WhiteboardActivity extends InfinitumActivity {
         builder.create().show();
     }
 
-    private class ShareWhiteboardTask extends AsyncTask<String, Void, Integer> {
+    private class ShareWhiteboardTask extends AsyncTask<String, Void, Void> {
 
         private WhiteboardDocument mWhiteboardDoc;
 
@@ -113,31 +143,17 @@ public class WhiteboardActivity extends InfinitumActivity {
         }
 
         @Override
-        protected Integer doInBackground(String... emails) {
+        protected Void doInBackground(String... emails) {
             mWhiteboardDoc.setShareEnabled(true);
-            String connection = NetworkUtils.getLocalIpAddress();
-            int port = 0;
-            try {
-                port = NetworkUtils.getAvailablePort();
-            } catch (IOException e) {
-                // TODO
-                e.printStackTrace();
-            }
-            mWhiteboardDoc.setConnection(connection + ':' + port);
             for (String email : emails) {
+                mLogger.debug("Inviting " + email + " to whiteboard");
                 mWhiteboardService.inviteToWhiteboard(mWhiteboardDoc, email);
             }
-            return port;
+            mLogger.debug("Opening inbound channel for whiteboard sharing at " + mWhiteboardDoc.getConnection());
+            mEndpoint.openInboundChannel();
+            return null;
         }
 
-        @Override
-        protected void onPostExecute(Integer port) {
-            // TODO
-            if (mHostEndpoint == null) {
-                mHostEndpoint = new ZmqHostEndpoint<Canvas>(port, null);
-            }
-            mHostEndpoint.openInboundChannel();
-        }
     }
 
 }

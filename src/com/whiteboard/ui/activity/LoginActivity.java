@@ -18,7 +18,6 @@ import com.clarionmedia.infinitum.orm.criteria.criterion.Conditions;
 import com.whiteboard.R;
 import com.whiteboard.auth.SessionManager;
 import com.whiteboard.model.User;
-import com.whiteboard.util.NetworkUtils;
 
 @InjectLayout(R.layout.activity_login)
 public class LoginActivity extends InfinitumActivity {
@@ -41,7 +40,6 @@ public class LoginActivity extends InfinitumActivity {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        NetworkUtils.getLocalIpAddress();
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
