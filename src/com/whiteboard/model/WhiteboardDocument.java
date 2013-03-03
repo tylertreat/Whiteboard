@@ -1,42 +1,60 @@
 package com.whiteboard.model;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import com.digitalxyncing.document.impl.Document;
 import com.digitalxyncing.document.impl.DocumentFragment;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.whiteboard.ui.view.WhiteboardView.DrawingPoint;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Queue;
 
-public class WhiteboardDocument extends Document<Canvas> {
+public class WhiteboardDocument extends Document<Whiteboard> {
 
-    private Canvas mCanvas;
+    private Whiteboard mWhiteboard;
     private String mOwner;
     private boolean mIsShareEnabled;
-    private String mConnection;
+    private String mShareConnection;
+    private String mRequestConnection;
+    private Gson mGson;
 
-    public WhiteboardDocument(Canvas canvas, String owner) throws IOException {
-        super(canvas);
-        mCanvas = canvas;
+    public WhiteboardDocument(Whiteboard whiteboard, String owner) throws IOException {
+        mWhiteboard = whiteboard;
         mOwner = owner;
+        mGson = new Gson();
+        setDocumentData(whiteboard.getBitmap());
     }
 
     @Override
-    protected byte[] serialize(Canvas canvas) {
-        return canvas.toString().getBytes();
+    public boolean update(DocumentFragment<Whiteboard> documentFragment) {
+        String json = new String(documentFragment.getData());
+        Type queueType = new TypeToken<Queue<DrawingPoint>>(){}.getType();
+        Queue<DrawingPoint> drawingPoints = mGson.fromJson(json, queueType);
+        return mWhiteboard.update(drawingPoints);
     }
 
     @Override
-    public boolean update(DocumentFragment<Canvas> documentFragment) {
-        return false;
-    }
-
-    @Override
-    public Canvas getFullState() {
-        return mCanvas;
+    public Whiteboard getFullState() {
+        return mWhiteboard;
     }
 
     @Override
     public String toString() {
-        return mCanvas.toString();
+        return mWhiteboard.toString();
+    }
+
+    public Canvas getCanvas() {
+        return mWhiteboard.getCanvas();
+    }
+
+    public void setCanvas(Canvas canvas, Bitmap bitmap) {
+        mWhiteboard.setCanvas(canvas);
+        mWhiteboard.setBitmap(bitmap);
+        setDocumentData(bitmap);
     }
 
     public String getOwner() {
@@ -51,11 +69,25 @@ public class WhiteboardDocument extends Document<Canvas> {
         mIsShareEnabled = isShareEnabled;
     }
 
-    public String getConnection() {
-        return mConnection;
+    public String getShareConnection() {
+        return mShareConnection;
     }
 
-    public void setConnection(String connection) {
-        mConnection = connection;
+    public void setShareConnection(String connection) {
+        mShareConnection = connection;
+    }
+
+    private void setDocumentData(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        data = stream.toByteArray();
+    }
+
+    public String getRequestConnection() {
+        return mRequestConnection;
+    }
+
+    public void setRequestConnection(String requestConnection) {
+        mRequestConnection = requestConnection;
     }
 }

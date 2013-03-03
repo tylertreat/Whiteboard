@@ -38,21 +38,13 @@
     </content>
     <orderEntry type="jdk" jdkName="Android 4.2 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/libs/DigitalXyncing.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="library" name="aws-android-sdk-1.4.4-ses" level="project" />
-    <orderEntry type="library" name="DigitalXyncing" level="project" />
     <orderEntry type="library" name="aws-android-sdk-1.4.4-core" level="project" />
     <orderEntry type="library" name="gson-2.2.2" level="project" />
-    <orderEntry type="library" name="dexmaker-1.0" level="project" />
     <orderEntry type="library" name="joda-time-2.1" level="project" />
+    <orderEntry type="library" name="dexmaker-1.0" level="project" />
+    <orderEntry type="library" name="infinitum-core-1.0.3" level="project" />
+    <orderEntry type="module" module-name="DigitalXyncing" />
   </component>
 </module>
 

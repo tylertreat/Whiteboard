@@ -6,15 +6,18 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import com.whiteboard.auth.SessionManager;
+import com.whiteboard.model.Whiteboard;
 import com.whiteboard.model.WhiteboardDocument;
+import com.whiteboard.model.WhiteboardDocumentFragment;
+import com.whiteboard.ui.activity.DocumentUpdateListener;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- * {@code WhiteboardView} extends {@link View} by using a {@link Canvas} for drawing.
- * It handles all of the touch and motion events.
+ * {@code WhiteboardView} extends {@link View} by using a {@link Canvas} for drawing. It handles all of the touch and
+ * motion events.
  */
 public class WhiteboardView extends View {
 
@@ -28,10 +31,11 @@ public class WhiteboardView extends View {
     private float mCurX;
     private float mCurY;
     private Queue<DrawingPoint> mLastDrawn;
+    private DocumentUpdateListener mUpdateListener;
 
     private enum PaintMode {
-        Draw,
-        Erase,
+        ERASE,
+        DRAW
     }
 
     public WhiteboardView(Context context, AttributeSet attr) {
@@ -41,15 +45,40 @@ public class WhiteboardView extends View {
         mPaint.setAntiAlias(true);
         mLastDrawn = new LinkedList<DrawingPoint>();
         setBackgroundColor(BACKGROUND_COLOR);
+
+        int width = context.getResources().getDisplayMetrics().widthPixels;
+        int height = context.getResources().getDisplayMetrics().heightPixels;
+        try {
+            Whiteboard whiteboard = new Whiteboard(this, width, height);
+            mWhiteboard = new WhiteboardDocument(whiteboard, SessionManager.getUser().getDisplayName());
+        } catch (IOException e) {
+            // TODO
+            e.printStackTrace();
+        }
     }
 
-    /**
-     * Clear the whiteboard canvas.
-     */
+    public void setUpdateListener(DocumentUpdateListener updateListener) {
+        mUpdateListener = updateListener;
+    }
+
+    public boolean update(final Queue<DrawingPoint> drawingPoints) {
+        return post(new Runnable() {
+            @Override
+            public void run() {
+                while (!drawingPoints.isEmpty()) {
+                    DrawingPoint drawingPoint = drawingPoints.remove();
+                    drawOval(mWhiteboard.getCanvas(), drawingPoint.mX, drawingPoint.mY, drawingPoint.mMajor,
+                            drawingPoint.mMinor, drawingPoint.mOrientation, drawingPoint.mPaint, true);
+                    invalidate();
+                }
+            }
+        });
+    }
+
     public void clear() {
         if (mWhiteboard != null) {
             mPaint.setColor(BACKGROUND_COLOR);
-            mWhiteboard.getFullState().drawPaint(mPaint);
+            mWhiteboard.getCanvas().drawPaint(mPaint);
             invalidate();
         }
     }
@@ -70,18 +99,12 @@ public class WhiteboardView extends View {
         if (curH < h) curH = h;
 
         Bitmap newBitmap = Bitmap.createBitmap(curW, curH, Bitmap.Config.ARGB_8888);
-        Canvas newCanvas = new Canvas();
-        newCanvas.setBitmap(newBitmap);
+        Canvas newCanvas = new Canvas(newBitmap);
         if (mBitmap != null) {
             newCanvas.drawBitmap(mBitmap, 0, 0, null);
         }
         mBitmap = newBitmap;
-        try {
-            mWhiteboard = new WhiteboardDocument(newCanvas, SessionManager.getUser().getDisplayName());
-        } catch (IOException e) {
-            // TODO
-            e.printStackTrace();
-        }
+        mWhiteboard.setCanvas(newCanvas, newBitmap);
     }
 
     @Override
@@ -113,13 +136,16 @@ public class WhiteboardView extends View {
 
         mCurX = Math.max(Math.min(mCurX + deltaX, curW - 1), 0);
         mCurY = Math.max(Math.min(mCurY + deltaY, curH - 1), 0);
-        paint(PaintMode.Draw, mCurX, mCurY);
+        paint(PaintMode.DRAW, mCurX, mCurY);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-            // TODO Fire document update message
+            // Fire document update message
+            if (mUpdateListener != null && mWhiteboard.isShareEnabled()) {
+                mUpdateListener.onDocumentUpdate(new WhiteboardDocumentFragment(mLastDrawn));
+            }
             mLastDrawn.clear();
         }
         return onTouchOrHoverEvent(event, true);
@@ -136,7 +162,7 @@ public class WhiteboardView extends View {
         PaintMode mode;
         if (isTouch || (buttonState & MotionEvent.BUTTON_PRIMARY) != 0) {
             // Draw paint when touching or if the primary button is pressed.
-            mode = PaintMode.Draw;
+            mode = PaintMode.DRAW;
         } else {
             // Otherwise, do not paint anything.
             return false;
@@ -155,9 +181,7 @@ public class WhiteboardView extends View {
                             event.getHistoricalPressure(j, i),
                             event.getHistoricalTouchMajor(j, i),
                             event.getHistoricalTouchMinor(j, i),
-                            event.getHistoricalOrientation(j, i),
-                            event.getHistoricalAxisValue(MotionEvent.AXIS_DISTANCE, j, i),
-                            event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, j, i));
+                            event.getHistoricalOrientation(j, i));
                 }
             }
             for (int j = 0; j < P; j++) {
@@ -167,9 +191,7 @@ public class WhiteboardView extends View {
                         event.getPressure(j),
                         event.getTouchMajor(j),
                         event.getTouchMinor(j),
-                        event.getOrientation(j),
-                        event.getAxisValue(MotionEvent.AXIS_DISTANCE, j),
-                        event.getAxisValue(MotionEvent.AXIS_TILT, j));
+                        event.getOrientation(j));
             }
             mCurX = event.getX();
             mCurY = event.getY();
@@ -179,18 +201,17 @@ public class WhiteboardView extends View {
 
     private PaintMode getPaintModeForTool(int toolType, PaintMode defaultMode) {
         if (toolType == MotionEvent.TOOL_TYPE_ERASER) {
-            return PaintMode.Erase;
+            return PaintMode.ERASE;
         }
         return defaultMode;
     }
 
     private void paint(PaintMode mode, float x, float y) {
-        paint(mode, x, y, 1.0f, 0, 0, 0, 0, 0);
+        paint(mode, x, y, 1.0f, 0, 0, 0);
     }
 
     private void paint(PaintMode mode, float x, float y, float pressure,
-                       float major, float minor, float orientation,
-                       float distance, float tilt) {
+                       float major, float minor, float orientation) {
         if (mBitmap != null) {
             if (major <= 0 || minor <= 0) {
                 // If size is not available, use a default value.
@@ -198,55 +219,57 @@ public class WhiteboardView extends View {
             }
 
             switch (mode) {
-                case Draw:
+                case DRAW:
                     mPaint.setColor(BRUSH_COLOR);
                     mPaint.setAlpha(Math.min((int) (pressure * 128), 255));
-                    drawOval(mWhiteboard.getFullState(), x, y, major, minor, orientation, mPaint);
+                    drawOval(mWhiteboard.getCanvas(), x, y, major, minor, orientation, mPaint, false);
                     break;
 
-                case Erase:
+                case ERASE:
                     mPaint.setColor(BACKGROUND_COLOR);
                     mPaint.setAlpha(Math.min((int) (pressure * 128), 255));
-                    drawOval(mWhiteboard.getFullState(), x, y, major, minor, orientation, mPaint);
+                    drawOval(mWhiteboard.getCanvas(), x, y, major, minor, orientation, mPaint, false);
                     break;
             }
         }
         invalidate();
     }
 
-    /**
-     * Draw an oval.
-     * <p/>
-     * When the orienation is 0 radians, orients the major axis vertically,
-     * angles less than or greater than 0 radians rotate the major axis left or right.
-     */
     private final RectF mReusableOvalRect = new RectF();
 
     private void drawOval(Canvas canvas, float x, float y, float major, float minor,
-                          float orientation, Paint paint) {
+                          float orientation, Paint paint, boolean historical) {
         canvas.save(Canvas.MATRIX_SAVE_FLAG);
         canvas.rotate((float) (orientation * 180 / Math.PI), x, y);
         mReusableOvalRect.left = x - minor / 2;
         mReusableOvalRect.right = x + minor / 2;
         mReusableOvalRect.top = y - major / 2;
         mReusableOvalRect.bottom = y + major / 2;
-        canvas.drawOval(mReusableOvalRect, paint);
+        canvas.drawOval(mReusableOvalRect, mPaint); // TODO not using paint passed in
         canvas.restore();
-        mLastDrawn.add(new DrawingPoint(mReusableOvalRect));
+        if (!historical) {
+            mLastDrawn.add(new DrawingPoint(x, y, major, minor, orientation, paint));
+        }
     }
 
-    private class DrawingPoint {
+    public class DrawingPoint {
 
-        private RectF mRectF;
-        // TODO We need to store the Paint information too, but Paint is not serializable
+        private float mX;
+        private float mY;
+        private float mMajor;
+        private float mMinor;
+        private float mOrientation;
+        private Paint mPaint;
 
-        public DrawingPoint(RectF rectF) {
-            mRectF = new RectF(rectF);
+        public DrawingPoint(float x, float y, float major, float minor, float orientation, Paint paint) {
+            mX = x;
+            mY = y;
+            mMajor = major;
+            mMinor = minor;
+            mOrientation = orientation;
+            mPaint = new Paint(paint);
         }
 
-        public RectF getRectF() {
-            return mRectF;
-        }
     }
 
 }

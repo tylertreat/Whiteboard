@@ -1,11 +1,13 @@
 package com.whiteboard.service.impl;
 
+import android.os.Build;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.amazonaws.services.simpleemail.model.*;
 import com.clarionmedia.infinitum.di.annotation.Bean;
 import com.clarionmedia.infinitum.logging.Logger;
+import com.whiteboard.model.InviteToken;
 import com.whiteboard.model.WhiteboardDocument;
 import com.whiteboard.service.NotificationService;
 
@@ -23,13 +25,19 @@ public class NotificationServiceImpl implements NotificationService {
             "To view it, open the following link from your Android device:\n\n%s\n\nRegards,\nThe Whiteboard Team";
 
     @Override
-    public void emailWhiteboardInvite(WhiteboardDocument whiteboard, String email) {
+    public void emailWhiteboardInvite(WhiteboardDocument whiteboard, String email, InviteToken token) {
         AmazonSimpleEmailServiceClient sesClient = getClient();
         String subjectText = EMAIL_SUBJECT;
         Content subjectContent = new Content(subjectText);
-        String uri = "http://whiteboard.clarionmedia.com?host=";
+        String uri = "http://whiteboard.clarionmedia.com?host=%s&token=" + token.getGuid();
         try {
-            uri += URLEncoder.encode(whiteboard.getConnection(), "utf-8");
+            if (Build.FINGERPRINT.startsWith("generic")) {
+                String port = whiteboard.getRequestConnection().split(":")[1];
+                int newPort = Integer.valueOf(port) + 1000;
+                uri = String.format(uri, URLEncoder.encode("10.0.2.2:" + newPort, "utf-8"));
+            } else {
+                uri = String.format(uri, URLEncoder.encode(whiteboard.getShareConnection(), "utf-8"));
+            }
         } catch (UnsupportedEncodingException e) {
             // TODO
             e.printStackTrace();

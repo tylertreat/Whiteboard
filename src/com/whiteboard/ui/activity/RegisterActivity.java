@@ -10,13 +10,11 @@ import com.clarionmedia.infinitum.activity.InfinitumActivity;
 import com.clarionmedia.infinitum.activity.annotation.Bind;
 import com.clarionmedia.infinitum.activity.annotation.InjectLayout;
 import com.clarionmedia.infinitum.activity.annotation.InjectView;
-import com.clarionmedia.infinitum.orm.Session;
-import com.clarionmedia.infinitum.orm.context.InfinitumOrmContext;
-import com.clarionmedia.infinitum.orm.context.InfinitumOrmContext.SessionType;
-import com.clarionmedia.infinitum.orm.criteria.criterion.Conditions;
+import com.clarionmedia.infinitum.di.annotation.Autowired;
 import com.whiteboard.R;
 import com.whiteboard.auth.SessionManager;
 import com.whiteboard.model.User;
+import com.whiteboard.service.UserService;
 
 @InjectLayout(R.layout.activity_register)
 public class RegisterActivity extends InfinitumActivity {
@@ -41,6 +39,9 @@ public class RegisterActivity extends InfinitumActivity {
     @Bind("cancelClicked")
     private Button mCancelButton;
 
+    @Autowired
+    private UserService mUserService;
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
@@ -62,11 +63,9 @@ public class RegisterActivity extends InfinitumActivity {
             Toast.makeText(this, "Passwords do not match", Toast.LENGTH_LONG).show();
             return;
         }
-        Session session = getInfinitumContext(InfinitumOrmContext.class).getSession(SessionType.SQLITE).open();
-        User check = session.createCriteria(User.class).add(Conditions.eq("mEmail", email)).unique();
+        User check = mUserService.getUserByEmail(email);
         if (check != null) {
             Toast.makeText(this, "Email already registered", Toast.LENGTH_LONG).show();
-            session.close();
             return;
         }
         User user = new User();
@@ -74,9 +73,8 @@ public class RegisterActivity extends InfinitumActivity {
         if (TextUtils.isEmpty(name))
             user.setName(name);
         user.setPassword(password);
-        session.save(user);
+        mUserService.saveUser(user);
         SessionManager.setUser(user);
-        session.close();
         setResult(RESULT_OK);
         finish();
     }

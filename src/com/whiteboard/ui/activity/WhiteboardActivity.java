@@ -31,12 +31,16 @@ import com.clarionmedia.infinitum.activity.annotation.InjectView;
 import com.clarionmedia.infinitum.di.annotation.Autowired;
 import com.clarionmedia.infinitum.logging.Logger;
 import com.digitalxyncing.communication.Endpoint;
-import com.digitalxyncing.communication.impl.ZmqClientEndpoint;
-import com.digitalxyncing.communication.impl.ZmqHostEndpoint;
+import com.digitalxyncing.communication.EndpointFactory;
+import com.digitalxyncing.communication.HostEndpoint;
 import com.whiteboard.R;
-import com.whiteboard.handler.ClientMessageHandlerFactory;
-import com.whiteboard.handler.HostMessageHandlerFactory;
+import com.whiteboard.auth.SessionManager;
+import com.whiteboard.auth.TokenAuthenticator;
+import com.whiteboard.handler.WhiteboardMessageHandlerFactory;
+import com.whiteboard.model.InviteToken;
 import com.whiteboard.model.WhiteboardDocument;
+import com.whiteboard.model.WhiteboardDocumentFragment;
+import com.whiteboard.service.TokenService;
 import com.whiteboard.service.WhiteboardService;
 import com.whiteboard.ui.view.WhiteboardView;
 import com.whiteboard.util.NetworkUtils;
@@ -52,6 +56,15 @@ public class WhiteboardActivity extends InfinitumActivity {
     @Autowired
     private WhiteboardService mWhiteboardService;
 
+    @Autowired
+    private TokenService mTokenService;
+
+    @Autowired
+    private EndpointFactory mEndpointFactory;
+
+    @Autowired
+    private TokenAuthenticator mTokenAuthenticator;
+
     private Endpoint<Canvas> mEndpoint;
     private Logger mLogger;
 
@@ -59,19 +72,19 @@ public class WhiteboardActivity extends InfinitumActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mLogger = Logger.getInstance(getClass().getSimpleName());
-        try {
-            setEndpoint(getIntent().getData());
-        } catch (IOException e) {
-            mLogger.error("Error while configuring endpoint", e);
-        }
+        initializeEndpoint();
         mWhiteboard.requestFocus();
+        mWhiteboard.setUpdateListener(new WhiteboardUpdateListener());
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mEndpoint.closeInboundChannel();
-        mEndpoint.closeOutboundChannel();
+        if (mEndpoint != null) {
+            mLogger.debug("Closing channels");
+            mEndpoint.closeInboundChannel();
+            mEndpoint.closeOutboundChannel();
+        }
     }
 
     @Override
@@ -95,20 +108,33 @@ public class WhiteboardActivity extends InfinitumActivity {
         }
     }
 
+    private void initializeEndpoint() {
+        try {
+            setEndpoint(getIntent().getData());
+        } catch (IOException e) {
+            mLogger.error("Error while configuring endpoint", e);
+        }
+    }
+
     private void setEndpoint(Uri whiteboardUri) throws IOException {
         String connection;
         if (whiteboardUri != null) {
+            String token = whiteboardUri.getQueryParameter("token");
+            token = SessionManager.getUser().getEmail() + " " + token;
             connection = whiteboardUri.getQueryParameter("host");
             String[] hostAndPort = connection.split(":");
-            mEndpoint = new ZmqClientEndpoint<Canvas>(hostAndPort[0], Integer.valueOf(hostAndPort[1]),
-                    NetworkUtils.getAvailablePort(), new ClientMessageHandlerFactory());
+            new EndpointConnectionTask(hostAndPort[0], Integer.valueOf(hostAndPort[1]), token).execute();
         } else {
             String ip = NetworkUtils.getLocalIpAddress();
             int port = NetworkUtils.getAvailablePort();
             connection = ip + ':' + port;
-            mEndpoint = new ZmqHostEndpoint<Canvas>(port, new HostMessageHandlerFactory());
+            HostEndpoint<Canvas> endpoint = mEndpointFactory.buildHostEndpoint(port,
+                    new WhiteboardMessageHandlerFactory(mWhiteboard.getDocument()),
+                    mTokenAuthenticator);
+            mEndpoint = endpoint;
+            mWhiteboard.getDocument().setRequestConnection(ip + ":" + endpoint.getConnectionRequestPort());
         }
-        mWhiteboard.getDocument().setConnection(connection);
+        mWhiteboard.getDocument().setShareConnection(connection);
     }
 
     private void showShareDialog() {
@@ -147,11 +173,44 @@ public class WhiteboardActivity extends InfinitumActivity {
             mWhiteboardDoc.setShareEnabled(true);
             for (String email : emails) {
                 mLogger.debug("Inviting " + email + " to whiteboard");
-                mWhiteboardService.inviteToWhiteboard(mWhiteboardDoc, email);
+                InviteToken token = mTokenService.createInviteToken(email);
+                mWhiteboardService.inviteToWhiteboard(mWhiteboardDoc, email, token);
             }
-            mLogger.debug("Opening inbound channel for whiteboard sharing at " + mWhiteboardDoc.getConnection());
+            mLogger.debug("Opening inbound channel for whiteboard sharing at " + mWhiteboardDoc.getRequestConnection());
             mEndpoint.openInboundChannel();
+            mEndpoint.openOutboundChannel();
             return null;
+        }
+
+    }
+
+    private class EndpointConnectionTask extends AsyncTask<Void, Void, Void> {
+
+        private String mHost;
+        private int mPort;
+        private String mToken;
+
+        public EndpointConnectionTask(String host, int port, String token) {
+            mHost = host;
+            mPort = port;
+            mToken = token;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            mEndpoint = mEndpointFactory.buildClientEndpoint(mHost, mPort, mToken, Canvas.class,
+                    new WhiteboardMessageHandlerFactory(mWhiteboard.getDocument()));
+            mEndpoint.openInboundChannel();
+            mEndpoint.openOutboundChannel();
+            return null;
+        }
+    }
+
+    private class WhiteboardUpdateListener implements DocumentUpdateListener {
+
+        @Override
+        public void onDocumentUpdate(WhiteboardDocumentFragment fragment) {
+            mEndpoint.send(fragment);
         }
 
     }

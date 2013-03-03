@@ -5,7 +5,7 @@ import org.joda.time.DateTime;
 
 public class InviteToken {
 
-    @PrimaryKey
+    @PrimaryKey(autoincrement = false)
     private String mGuid;
     private String mOwner;
     private String mInvited;
