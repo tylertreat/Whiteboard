@@ -1,9 +1,11 @@
 package com.whiteboard.ui.activity;
 
-import com.whiteboard.model.WhiteboardDocumentFragment;
+import com.whiteboard.ui.view.WhiteboardView.DrawingPoint;
+
+import java.util.Queue;
 
 public interface DocumentUpdateListener {
 
-    void onDocumentUpdate(WhiteboardDocumentFragment fragment);
+    void onDocumentUpdate(Queue<DrawingPoint> points);
 
 }

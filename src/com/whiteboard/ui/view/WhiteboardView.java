@@ -8,7 +8,6 @@ import android.view.View;
 import com.whiteboard.auth.SessionManager;
 import com.whiteboard.model.Whiteboard;
 import com.whiteboard.model.WhiteboardDocument;
-import com.whiteboard.model.WhiteboardDocumentFragment;
 import com.whiteboard.ui.activity.DocumentUpdateListener;
 
 import java.io.IOException;
@@ -144,7 +143,7 @@ public class WhiteboardView extends View {
         if (event.getActionMasked() == MotionEvent.ACTION_UP) {
             // Fire document update message
             if (mUpdateListener != null && mWhiteboard.isShareEnabled()) {
-                mUpdateListener.onDocumentUpdate(new WhiteboardDocumentFragment(mLastDrawn));
+                mUpdateListener.onDocumentUpdate(mLastDrawn);
             }
             mLastDrawn.clear();
         }

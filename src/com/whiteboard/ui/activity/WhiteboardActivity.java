@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.*;
 import android.widget.EditText;
+import android.widget.Toast;
 import com.clarionmedia.infinitum.activity.InfinitumActivity;
 import com.clarionmedia.infinitum.activity.annotation.InjectLayout;
 import com.clarionmedia.infinitum.activity.annotation.InjectView;
@@ -43,9 +44,12 @@ import com.whiteboard.model.WhiteboardDocumentFragment;
 import com.whiteboard.service.TokenService;
 import com.whiteboard.service.WhiteboardService;
 import com.whiteboard.ui.view.WhiteboardView;
+import com.whiteboard.ui.view.WhiteboardView.DrawingPoint;
 import com.whiteboard.util.NetworkUtils;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.Queue;
 
 @InjectLayout(R.layout.activity_whiteboard)
 public class WhiteboardActivity extends InfinitumActivity {
@@ -202,15 +206,40 @@ public class WhiteboardActivity extends InfinitumActivity {
                     new WhiteboardMessageHandlerFactory(mWhiteboard.getDocument()));
             mEndpoint.openInboundChannel();
             mEndpoint.openOutboundChannel();
+            mWhiteboard.getDocument().setShareEnabled(true);
+            mLogger.debug("Connection open on port " + mEndpoint.getPort());
             return null;
+        }
+
+
+        @Override
+        public void onPostExecute(Void param) {
+            Toast.makeText(WhiteboardActivity.this, "Connection open on port " + mEndpoint.getPort(),
+                    Toast.LENGTH_LONG).show();
+            ;
         }
     }
 
     private class WhiteboardUpdateListener implements DocumentUpdateListener {
 
+        private static final int FRAGMENT_POINT_LIMIT = 5;
+
         @Override
-        public void onDocumentUpdate(WhiteboardDocumentFragment fragment) {
-            mEndpoint.send(fragment);
+        public void onDocumentUpdate(Queue<DrawingPoint> points) {
+            // TODO: This should probably be done on a separate thread
+            while (true) {
+                Queue<DrawingPoint> fragment = new LinkedList<DrawingPoint>();
+                int count = 0;
+                while (!points.isEmpty()) {
+                    fragment.add(points.remove());
+                    count++;
+                    if (count == FRAGMENT_POINT_LIMIT)
+                        break;
+                }
+                mEndpoint.send(new WhiteboardDocumentFragment(fragment));
+                if (points.isEmpty())
+                    break;
+            }
         }
 
     }
