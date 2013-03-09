@@ -35,7 +35,7 @@ public class Whiteboard {
         mCanvas = canvas;
     }
 
-    public boolean update(Queue<DrawingPoint> drawingPoints) {
-        return mWhiteboardView.update(drawingPoints);
+    public boolean update(DrawingPoint drawingPoint) {
+        return mWhiteboardView.update(drawingPoint);
     }
 }

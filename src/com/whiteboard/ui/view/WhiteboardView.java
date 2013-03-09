@@ -11,8 +11,6 @@ import com.whiteboard.model.WhiteboardDocument;
 import com.whiteboard.ui.activity.DocumentUpdateListener;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.Queue;
 
 /**
  * {@code WhiteboardView} extends {@link View} by using a {@link Canvas} for drawing. It handles all of the touch and
@@ -29,7 +27,6 @@ public class WhiteboardView extends View {
     private final Paint mPaint;
     private float mCurX;
     private float mCurY;
-    private Queue<DrawingPoint> mLastDrawn;
     private DocumentUpdateListener mUpdateListener;
 
     private enum PaintMode {
@@ -42,7 +39,6 @@ public class WhiteboardView extends View {
         setFocusable(true);
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
-        mLastDrawn = new LinkedList<DrawingPoint>();
         setBackgroundColor(BACKGROUND_COLOR);
 
         int width = context.getResources().getDisplayMetrics().widthPixels;
@@ -60,16 +56,13 @@ public class WhiteboardView extends View {
         mUpdateListener = updateListener;
     }
 
-    public boolean update(final Queue<DrawingPoint> drawingPoints) {
+    public boolean update(final DrawingPoint drawingPoint) {
         return post(new Runnable() {
             @Override
             public void run() {
-                while (!drawingPoints.isEmpty()) {
-                    DrawingPoint drawingPoint = drawingPoints.remove();
-                    drawOval(mWhiteboard.getCanvas(), drawingPoint.mX, drawingPoint.mY, drawingPoint.mMajor,
-                            drawingPoint.mMinor, drawingPoint.mOrientation, drawingPoint.mPaint, true);
-                    invalidate();
-                }
+                drawOval(mWhiteboard.getCanvas(), drawingPoint.mX, drawingPoint.mY, drawingPoint.mMajor,
+                        drawingPoint.mMinor, drawingPoint.mOrientation, mPaint, true);
+                invalidate();
             }
         });
     }
@@ -140,13 +133,6 @@ public class WhiteboardView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-            // Fire document update message
-            if (mUpdateListener != null && mWhiteboard.isShareEnabled()) {
-                mUpdateListener.onDocumentUpdate(mLastDrawn);
-            }
-            mLastDrawn.clear();
-        }
         return onTouchOrHoverEvent(event, true);
     }
 
@@ -247,7 +233,10 @@ public class WhiteboardView extends View {
         canvas.drawOval(mReusableOvalRect, mPaint); // TODO not using paint passed in
         canvas.restore();
         if (!historical) {
-            mLastDrawn.add(new DrawingPoint(x, y, major, minor, orientation, paint));
+            // Fire document update message
+            if (mUpdateListener != null && mWhiteboard.isShareEnabled()) {
+                mUpdateListener.onDocumentUpdate(new DrawingPoint(x, y, major, minor, orientation));
+            }
         }
     }
 
@@ -258,15 +247,13 @@ public class WhiteboardView extends View {
         private float mMajor;
         private float mMinor;
         private float mOrientation;
-        private Paint mPaint;
 
-        public DrawingPoint(float x, float y, float major, float minor, float orientation, Paint paint) {
+        public DrawingPoint(float x, float y, float major, float minor, float orientation) {
             mX = x;
             mY = y;
             mMajor = major;
             mMinor = minor;
             mOrientation = orientation;
-            mPaint = new Paint(paint);
         }
 
     }

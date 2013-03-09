@@ -48,8 +48,6 @@ import com.whiteboard.ui.view.WhiteboardView.DrawingPoint;
 import com.whiteboard.util.NetworkUtils;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.Queue;
 
 @InjectLayout(R.layout.activity_whiteboard)
 public class WhiteboardActivity extends InfinitumActivity {
@@ -222,24 +220,9 @@ public class WhiteboardActivity extends InfinitumActivity {
 
     private class WhiteboardUpdateListener implements DocumentUpdateListener {
 
-        private static final int FRAGMENT_POINT_LIMIT = 5;
-
         @Override
-        public void onDocumentUpdate(Queue<DrawingPoint> points) {
-            // TODO: This should probably be done on a separate thread
-            while (true) {
-                Queue<DrawingPoint> fragment = new LinkedList<DrawingPoint>();
-                int count = 0;
-                while (!points.isEmpty()) {
-                    fragment.add(points.remove());
-                    count++;
-                    if (count == FRAGMENT_POINT_LIMIT)
-                        break;
-                }
-                mEndpoint.send(new WhiteboardDocumentFragment(fragment));
-                if (points.isEmpty())
-                    break;
-            }
+        public void onDocumentUpdate(DrawingPoint point) {
+            mEndpoint.send(new WhiteboardDocumentFragment(point));
         }
 
     }

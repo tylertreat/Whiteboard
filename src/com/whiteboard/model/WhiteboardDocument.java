@@ -32,9 +32,8 @@ public class WhiteboardDocument extends Document<Whiteboard> {
     @Override
     public boolean update(DocumentFragment<Whiteboard> documentFragment) {
         String json = new String(documentFragment.getData());
-        Type queueType = new TypeToken<Queue<DrawingPoint>>(){}.getType();
-        Queue<DrawingPoint> drawingPoints = mGson.fromJson(json, queueType);
-        return mWhiteboard.update(drawingPoints);
+        DrawingPoint drawingPoint = mGson.fromJson(json, DrawingPoint.class);
+        return mWhiteboard.update(drawingPoint);
     }
 
     @Override
