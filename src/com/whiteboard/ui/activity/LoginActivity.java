@@ -61,7 +61,7 @@ public class LoginActivity extends InfinitumActivity {
         if (TextUtils.isEmpty(password))
             return;
         User user = mUserService.getUserByEmail(email);
-        if (!user.getPassword().equals(password)) {
+        if (user == null || !user.getPassword().equals(password)) {
             Toast.makeText(this, "Invalid username or password", Toast.LENGTH_LONG).show();
             return;
         }
