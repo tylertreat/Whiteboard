@@ -33,10 +33,9 @@ public class NotificationServiceImpl implements NotificationService {
         try {
             if (Build.FINGERPRINT.startsWith("generic")) {
                 String port = whiteboard.getRequestConnection().split(":")[1];
-                int newPort = Integer.valueOf(port) + 1000;
-                uri = String.format(uri, URLEncoder.encode("10.0.2.2:" + newPort, "utf-8"));
+                uri = String.format(uri, URLEncoder.encode("10.0.2.2:" + port, "utf-8"));
             } else {
-                uri = String.format(uri, URLEncoder.encode(whiteboard.getShareConnection(), "utf-8"));
+                uri = String.format(uri, URLEncoder.encode(whiteboard.getRequestConnection(), "utf-8"));
             }
         } catch (UnsupportedEncodingException e) {
             // TODO
