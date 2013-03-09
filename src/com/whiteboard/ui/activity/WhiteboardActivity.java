@@ -18,7 +18,6 @@ package com.whiteboard.ui.activity;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -31,6 +30,7 @@ import com.clarionmedia.infinitum.activity.annotation.InjectLayout;
 import com.clarionmedia.infinitum.activity.annotation.InjectView;
 import com.clarionmedia.infinitum.di.annotation.Autowired;
 import com.clarionmedia.infinitum.logging.Logger;
+import com.digitalxyncing.communication.ClientAddedListener;
 import com.digitalxyncing.communication.Endpoint;
 import com.digitalxyncing.communication.EndpointFactory;
 import com.digitalxyncing.communication.HostEndpoint;
@@ -39,6 +39,7 @@ import com.whiteboard.auth.SessionManager;
 import com.whiteboard.auth.TokenAuthenticator;
 import com.whiteboard.handler.WhiteboardMessageHandlerFactory;
 import com.whiteboard.model.InviteToken;
+import com.whiteboard.model.Whiteboard;
 import com.whiteboard.model.WhiteboardDocument;
 import com.whiteboard.model.WhiteboardDocumentFragment;
 import com.whiteboard.service.TokenService;
@@ -67,7 +68,8 @@ public class WhiteboardActivity extends InfinitumActivity {
     @Autowired
     private TokenAuthenticator mTokenAuthenticator;
 
-    private Endpoint<Canvas> mEndpoint;
+    private Menu mMenu;
+    private Endpoint<Whiteboard> mEndpoint;
     private Logger mLogger;
 
     @Override
@@ -93,6 +95,7 @@ public class WhiteboardActivity extends InfinitumActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.whiteboard_activity, menu);
+        mMenu = menu;
         return true;
     }
 
@@ -121,18 +124,31 @@ public class WhiteboardActivity extends InfinitumActivity {
     private void setEndpoint(Uri whiteboardUri) throws IOException {
         String connection;
         if (whiteboardUri != null) {
+            // We're a client
             String token = whiteboardUri.getQueryParameter("token");
             token = SessionManager.getUser().getEmail() + " " + token;
             connection = whiteboardUri.getQueryParameter("host");
             String[] hostAndPort = connection.split(":");
             new EndpointConnectionTask(hostAndPort[0], Integer.valueOf(hostAndPort[1]), token).execute();
         } else {
+            // We're a host
             String ip = NetworkUtils.getNetworkIpAddress();
             int port = NetworkUtils.getAvailablePort();
             connection = ip + ':' + port;
-            HostEndpoint<Canvas> endpoint = mEndpointFactory.buildHostEndpoint(port,
+            final HostEndpoint<Whiteboard> endpoint = mEndpointFactory.buildHostEndpoint(port,
                     new WhiteboardMessageHandlerFactory(mWhiteboard.getDocument()),
                     mTokenAuthenticator);
+            endpoint.addClientAddedListener(new ClientAddedListener() {
+                @Override
+                public void onClientAdded(final String address, final int port) {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            Toast.makeText(WhiteboardActivity.this, "Client connected: " + address + ":" + port,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            });
             mEndpoint = endpoint;
             mWhiteboard.getDocument().setRequestConnection(ip + ":" + endpoint.getConnectionRequestPort());
         }
@@ -200,10 +216,11 @@ public class WhiteboardActivity extends InfinitumActivity {
 
         @Override
         protected Void doInBackground(Void... params) {
-            mEndpoint = mEndpointFactory.buildClientEndpoint(mHost, mPort, mToken, Canvas.class,
+            mEndpoint = mEndpointFactory.buildClientEndpoint(mHost, mPort, mToken, Whiteboard.class,
                     new WhiteboardMessageHandlerFactory(mWhiteboard.getDocument()));
             mEndpoint.openInboundChannel();
             mEndpoint.openOutboundChannel();
+            mEndpoint.requestFullDocument();
             mWhiteboard.getDocument().setShareEnabled(true);
             mLogger.debug("Connection open on port " + mEndpoint.getPort());
             return null;
@@ -214,7 +231,8 @@ public class WhiteboardActivity extends InfinitumActivity {
         public void onPostExecute(Void param) {
             Toast.makeText(WhiteboardActivity.this, "Connection open on port " + mEndpoint.getPort(),
                     Toast.LENGTH_LONG).show();
-            ;
+            // Disable the share menu item since we're a client
+            mMenu.findItem(R.id.menu_share).setEnabled(false);
         }
     }
 

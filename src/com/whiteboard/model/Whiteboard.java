@@ -5,8 +5,6 @@ import android.graphics.Canvas;
 import com.whiteboard.ui.view.WhiteboardView;
 import com.whiteboard.ui.view.WhiteboardView.DrawingPoint;
 
-import java.util.Queue;
-
 public class Whiteboard {
 
     private Canvas mCanvas;
@@ -37,5 +35,9 @@ public class Whiteboard {
 
     public boolean update(DrawingPoint drawingPoint) {
         return mWhiteboardView.update(drawingPoint);
+    }
+
+    public boolean update(Bitmap bitmap) {
+        return mWhiteboardView.update(bitmap);
     }
 }

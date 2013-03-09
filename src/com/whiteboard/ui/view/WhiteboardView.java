@@ -67,6 +67,20 @@ public class WhiteboardView extends View {
         });
     }
 
+    public boolean update(final Bitmap bitmap) {
+        return post(new Runnable() {
+            @Override
+            public void run() {
+                Paint paint = new Paint();
+                paint.setAntiAlias(true);
+                paint.setFilterBitmap(true);
+                paint.setDither(true);
+                mWhiteboard.getCanvas().drawBitmap(bitmap, 0, 0, paint);
+                invalidate();
+            }
+        });
+    }
+
     public void clear() {
         if (mWhiteboard != null) {
             mPaint.setColor(BACKGROUND_COLOR);

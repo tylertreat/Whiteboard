@@ -5,13 +5,10 @@ import android.graphics.Canvas;
 import com.digitalxyncing.document.impl.Document;
 import com.digitalxyncing.document.impl.DocumentFragment;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.whiteboard.ui.view.WhiteboardView.DrawingPoint;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.Queue;
 
 public class WhiteboardDocument extends Document<Whiteboard> {
 
@@ -54,6 +51,10 @@ public class WhiteboardDocument extends Document<Whiteboard> {
         mWhiteboard.setCanvas(canvas);
         mWhiteboard.setBitmap(bitmap);
         setDocumentData(bitmap);
+    }
+
+    public boolean drawBitmap(Bitmap bitmap) {
+        return mWhiteboard.update(bitmap);
     }
 
     public String getOwner() {
