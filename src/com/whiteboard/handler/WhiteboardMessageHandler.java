@@ -11,31 +11,30 @@ import com.whiteboard.model.Whiteboard;
 import com.whiteboard.model.WhiteboardDocument;
 import com.whiteboard.model.WhiteboardDocumentFragment;
 
-public class WhiteboardMessageHandler extends MessageHandler {
+public class WhiteboardMessageHandler extends MessageHandler<Whiteboard> {
 
-    private Endpoint<Whiteboard> mEndpoint;
     private WhiteboardDocument mWhiteboardDocument;
     private Logger mLogger;
 
     public WhiteboardMessageHandler(Endpoint<Whiteboard> endpoint, WhiteboardDocument whiteboardDocument,
                                     byte[] message) {
-        super(message);
-        mEndpoint = endpoint;
+        super(endpoint, message);
         mWhiteboardDocument = whiteboardDocument;
         mLogger = Logger.getInstance(getClass().getSimpleName());
     }
 
     @Override
-    protected void handle(byte[] bytes, int i, MessageType messageType) {
+    protected void handle(byte[] bytes, int i, String origin, MessageType messageType) {
         switch (messageType) {
             case DOCUMENT_FRAGMENT:
                 String json = new String(bytes, i, bytes.length - i);
                 mLogger.debug(json);
                 DocumentFragment<Whiteboard> fragment = new WhiteboardDocumentFragment(json);
+                fragment.setOrigin(origin);
                 mWhiteboardDocument.update(fragment);
-                if (mEndpoint.isHost()) {
+                if (endpoint.isHost()) {
                     // Propagate update to clients
-                    mEndpoint.send(fragment);
+                    endpoint.send(fragment);
                 }
                 break;
             case FULL_DOCUMENT:
@@ -43,7 +42,7 @@ public class WhiteboardMessageHandler extends MessageHandler {
                 mWhiteboardDocument.drawBitmap(bitmap);
                 break;
             case FULL_DOCUMENT_REQUEST:
-                mEndpoint.send(mWhiteboardDocument);
+                endpoint.send(mWhiteboardDocument);
                 break;
         }
     }
