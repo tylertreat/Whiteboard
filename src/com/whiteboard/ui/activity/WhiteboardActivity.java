@@ -127,7 +127,7 @@ public class WhiteboardActivity extends InfinitumActivity {
             String[] hostAndPort = connection.split(":");
             new EndpointConnectionTask(hostAndPort[0], Integer.valueOf(hostAndPort[1]), token).execute();
         } else {
-            String ip = NetworkUtils.getLocalIpAddress();
+            String ip = NetworkUtils.getNetworkIpAddress();
             int port = NetworkUtils.getAvailablePort();
             connection = ip + ':' + port;
             HostEndpoint<Canvas> endpoint = mEndpointFactory.buildHostEndpoint(port,

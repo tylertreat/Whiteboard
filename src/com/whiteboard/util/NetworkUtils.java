@@ -1,11 +1,13 @@
 package com.whiteboard.util;
 
-import android.text.format.Formatter;
-import android.util.Log;
+import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import com.clarionmedia.infinitum.context.ContextFactory;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.Enumeration;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
 
 public final class NetworkUtils {
 
@@ -16,21 +18,18 @@ public final class NetworkUtils {
 
     }
 
-    public static String getLocalIpAddress() {
-        try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
-                NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                    InetAddress inetAddress = enumIpAddr.nextElement();
-                    if (!inetAddress.isLoopbackAddress()) {
-                        return Formatter.formatIpAddress(inetAddress.hashCode());
-                    }
-                }
-            }
-        } catch (SocketException ex) {
-            Log.e("NetworkUtils", ex.toString());
-        }
-        return null;
+    public static String getNetworkIpAddress() {
+        Context context = ContextFactory.newInstance().getAndroidContext();
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        int ip = wifiInfo.getIpAddress();
+
+        return String.format(
+                "%d.%d.%d.%d",
+                (ip & 0xff),
+                (ip >> 8 & 0xff),
+                (ip >> 16 & 0xff),
+                (ip >> 24 & 0xff));
     }
 
     public static int getAvailablePort() throws IOException {
