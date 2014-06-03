@@ -18,7 +18,7 @@ import java.net.URLEncoder;
 public class NotificationServiceImpl implements NotificationService {
 
     private static final String SES_ACCESS_KEY = "AKIAJQCSS6HWHET2LWNQ";
-    private static final String SES_SECRET_KEY = "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";
+    private static final String SES_SECRET_KEY = "changeme";
     private static final String EMAIL_SENDER_ADDRESS = "ttreat31@gmail.com";
     private static final String EMAIL_SUBJECT = "Whiteboard Invitation";
     private static final String EMAIL_BODY = "Greetings!\n\n%s has invited you to participate in a whiteboard. " +
